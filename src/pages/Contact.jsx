@@ -63,7 +63,7 @@ const Contact = () => {
   };
 
   return (
-    <div className="min-h-screen py-16 bg-gray-50">
+    <div className="py-16 bg-gray-50">
       <div className="container mx-auto px-4 max-w-6xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-gray-800 mb-4">Contact Us</h1>
@@ -73,7 +73,7 @@ const Contact = () => {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 gap-12">
           {/* Contact Information */}
           <div>
             <div className="bg-white rounded-lg shadow-md p-8">
@@ -130,12 +130,11 @@ const Contact = () => {
             </div>
           </div>
 
-          {/* Contact Form */}
-          <div>
+          {/* Contact Message Form */}
+          {/* <div>
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Send Us a Message</h2>
-
-              {/* Success/Error Messages */}
+ 
               {submitStatus === 'success' && (
                 <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
                   <FaCheckCircle className="text-green-500 mr-3 flex-shrink-0" />
@@ -242,7 +241,7 @@ const Contact = () => {
                 </p>
               </form>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
