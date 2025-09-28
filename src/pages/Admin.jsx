@@ -1,9 +1,10 @@
 // src/pages/Admin.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTrash, FaArrowLeft, FaUpload, FaSignOutAlt } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaArrowLeft, FaUpload, FaSignOutAlt, FaCompress } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 import eventsMiddleware from '../middlewares/eventsMiddleware';
+import { compressImage, compressImages, getDisplayImageSettings, getGalleryImageSettings, formatFileSize } from '../utils/imageCompression';
 
 const Admin = () => {
   const [events, setEvents] = useState([]);
@@ -18,6 +19,8 @@ const Admin = () => {
   const [displayImage, setDisplayImage] = useState(null);
   const [galleryImages, setGalleryImages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [compressionProgress, setCompressionProgress] = useState(0);
+  const [isCompressing, setIsCompressing] = useState(false);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
 
@@ -49,7 +52,7 @@ const Admin = () => {
     }));
   };
 
-  const handleDisplayImageChange = (e) => {
+  const handleDisplayImageChange = async (e) => {
     const file = e.target.files[0];
     if (file) {
       // Validate file type
@@ -57,11 +60,44 @@ const Admin = () => {
         alert('Please select an image file');
         return;
       }
-      setDisplayImage(file);
+
+      try {
+        setIsCompressing(true);
+        setCompressionProgress(0);
+        
+        // Simulate compression progress
+        const progressInterval = setInterval(() => {
+          setCompressionProgress(prev => {
+            if (prev >= 90) {
+              clearInterval(progressInterval);
+              return 90;
+            }
+            return prev + 20;
+          });
+        }, 100);
+
+        // Compress the display image with higher quality settings
+        const compressedFile = await compressImage(file, getDisplayImageSettings());
+        
+        clearInterval(progressInterval);
+        setCompressionProgress(100);
+        setDisplayImage(compressedFile);
+        
+        setTimeout(() => {
+          setIsCompressing(false);
+          setCompressionProgress(0);
+        }, 500);
+        
+      } catch (error) {
+        console.error('Error compressing image:', error);
+        alert('Failed to process image. Please try again.');
+        setIsCompressing(false);
+        setCompressionProgress(0);
+      }
     }
   };
 
-  const handleGalleryImagesChange = (e) => {
+  const handleGalleryImagesChange = async (e) => {
     const files = Array.from(e.target.files);
 
     // Validate all files are images
@@ -71,7 +107,41 @@ const Admin = () => {
       return;
     }
 
-    setGalleryImages(prev => [...prev, ...files]);
+    if (files.length === 0) return;
+
+    try {
+      setIsCompressing(true);
+      setCompressionProgress(0);
+      
+      // Simulate compression progress
+      const progressInterval = setInterval(() => {
+        setCompressionProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + (90 / files.length);
+        });
+      }, 200);
+
+      // Compress gallery images
+      const compressedFiles = await compressImages(files, getGalleryImageSettings());
+      
+      clearInterval(progressInterval);
+      setCompressionProgress(100);
+      setGalleryImages(prev => [...prev, ...compressedFiles]);
+      
+      setTimeout(() => {
+        setIsCompressing(false);
+        setCompressionProgress(0);
+      }, 500);
+      
+    } catch (error) {
+      console.error('Error compressing gallery images:', error);
+      alert('Failed to process some images. Please try again.');
+      setIsCompressing(false);
+      setCompressionProgress(0);
+    }
   };
 
   const removeGalleryImage = (index) => {
@@ -125,7 +195,20 @@ const Admin = () => {
 
     } catch (error) {
       console.error('Error creating event:', error);
-      alert(`Failed to create event: ${error.message}`);
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to create event';
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Upload timed out. Please try again with smaller images.';
+      } else if (error.message.includes('413')) {
+        errorMessage = 'Images are too large. Please select smaller images.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else {
+        errorMessage = `Failed to create event: ${error.message}`;
+      }
+      
+      alert(errorMessage);
     } finally {
       setLoading(false);
       setUploadProgress(0);
@@ -157,6 +240,9 @@ const Admin = () => {
     });
     setDisplayImage(null);
     setGalleryImages([]);
+    setUploadProgress(0);
+    setCompressionProgress(0);
+    setIsCompressing(false);
     setShowForm(false);
   };
 
@@ -209,20 +295,45 @@ const Admin = () => {
 
           {showForm && (
             <div className="mb-8 p-6 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
-              <h2 className="text-2xl font-semibold mb-6 text-gray-800">Create New Event</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-semibold text-gray-800">Create New Event</h2>
+                <div className="flex items-center text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+                  <FaCompress className="mr-2" />
+                  <span>Images are automatically optimized for faster uploads</span>
+                </div>
+              </div>
 
-              {uploadProgress > 0 && (
-                <div className="mb-4">
-                  <div className="flex justify-between text-sm text-gray-600 mb-1">
-                    <span>Uploading...</span>
-                    <span>{uploadProgress}%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-pink-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${uploadProgress}%` }}
-                    ></div>
-                  </div>
+              {(uploadProgress > 0 || compressionProgress > 0) && (
+                <div className="mb-4 space-y-3">
+                  {compressionProgress > 0 && (
+                    <div>
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Compressing images...</span>
+                        <span>{compressionProgress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${compressionProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {uploadProgress > 0 && (
+                    <div>
+                      <div className="flex justify-between text-sm text-gray-600 mb-1">
+                        <span>Uploading to server...</span>
+                        <span>{uploadProgress}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div
+                          className="bg-pink-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -285,7 +396,9 @@ const Admin = () => {
                     <label className="block text-gray-700 mb-2 font-medium">
                       Display Image *
                       {displayImage && (
-                        <span className="text-green-600 text-sm ml-2">✓ Selected</span>
+                        <span className="text-green-600 text-sm ml-2">
+                          ✓ Selected ({formatFileSize(displayImage.size)})
+                        </span>
                       )}
                     </label>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-400 transition-colors">
@@ -298,10 +411,21 @@ const Admin = () => {
                         required
                       />
                       <label htmlFor="displayImage" className="cursor-pointer block">
-                        <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
-                        <span className="text-gray-600">
-                          {displayImage ? displayImage.name : 'Click to select display image'}
-                        </span>
+                        {isCompressing && compressionProgress > 0 ? (
+                          <>
+                            <FaCompress className="mx-auto text-3xl text-blue-500 mb-2 animate-pulse" />
+                            <span className="text-blue-600">
+                              Compressing image... {compressionProgress}%
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
+                            <span className="text-gray-600">
+                              {displayImage ? displayImage.name : 'Click to select display image'}
+                            </span>
+                          </>
+                        )}
                       </label>
                     </div>
                   </div>
@@ -310,7 +434,9 @@ const Admin = () => {
                     <label className="block text-gray-700 mb-2 font-medium">
                       Gallery Images
                       {galleryImages.length > 0 && (
-                        <span className="text-green-600 text-sm ml-2">({galleryImages.length} selected)</span>
+                        <span className="text-green-600 text-sm ml-2">
+                          ({galleryImages.length} selected, {formatFileSize(galleryImages.reduce((total, img) => total + img.size, 0))})
+                        </span>
                       )}
                     </label>
                     <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:border-pink-400 transition-colors">
@@ -323,10 +449,21 @@ const Admin = () => {
                         id="galleryImages"
                       />
                       <label htmlFor="galleryImages" className="cursor-pointer block">
-                        <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
-                        <span className="text-gray-600">
-                          Click to select multiple gallery images
-                        </span>
+                        {isCompressing && compressionProgress > 0 ? (
+                          <>
+                            <FaCompress className="mx-auto text-3xl text-blue-500 mb-2 animate-pulse" />
+                            <span className="text-blue-600">
+                              Compressing gallery images... {compressionProgress}%
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <FaUpload className="mx-auto text-3xl text-gray-400 mb-2" />
+                            <span className="text-gray-600">
+                              Click to select multiple gallery images
+                            </span>
+                          </>
+                        )}
                       </label>
                     </div>
 
@@ -358,10 +495,10 @@ const Admin = () => {
                 <div className="flex space-x-4 pt-4">
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || isCompressing}
                     className="bg-pink-600 text-white px-8 py-3 rounded-lg hover:bg-pink-700 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
                   >
-                    {loading ? 'Creating...' : 'Create Event'}
+                    {isCompressing ? 'Compressing Images...' : loading ? 'Creating Event...' : 'Create Event'}
                   </button>
                   <button
                     type="button"
