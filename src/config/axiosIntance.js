@@ -5,13 +5,17 @@ const baseURL = import.meta.env.VITE_BASE_URL;
 // Create base axios instance for public requests (no auth required)
 const publicAxiosInstance = Axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 60000, // Increase timeout to 60 seconds for large uploads
+  maxContentLength: 100 * 1024 * 1024, // 100MB max content length
+  maxBodyLength: 100 * 1024 * 1024, // 100MB max body length
 });
 
 // Create authenticated axios instance for protected requests
 const authAxiosInstance = Axios.create({
   baseURL,
-  timeout: 30000,
+  timeout: 60000, // Increase timeout to 60 seconds for large uploads
+  maxContentLength: 100 * 1024 * 1024, // 100MB max content length
+  maxBodyLength: 100 * 1024 * 1024, // 100MB max body length
 });
 
 // Request interceptor for authenticated requests
