@@ -18,7 +18,6 @@ const Home = () => {
   ];
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [currentTeamIndex, setCurrentTeamIndex] = useState(0);
 
   // Team members data - you can add as many as you want
   const teamMembers = [
@@ -51,6 +50,18 @@ const Home = () => {
       description: "David handles all venue logistics and vendor coordination to ensure seamless execution of your event."
     },
   ];
+
+  // Random wedding image for team section (left side)
+  const weddingImages = [
+    "/images/hero1.jpg",
+    "/images/hero2.jpg",
+    "/images/hero3.jpg",
+    "/images/event1.jpg",
+    "/images/event2.jpg"
+  ];
+  const randomTeamImage = React.useMemo(() => {
+    return weddingImages[Math.floor(Math.random() * weddingImages.length)];
+  }, []);
 
   // Fetch events from API
   useEffect(() => {
@@ -87,18 +98,6 @@ const Home = () => {
     return () => clearInterval(interval);
   }, [carouselImages.length]);
 
-  // Auto-advance team carousel every 5 seconds
-  useEffect(() => {
-    if (teamMembers.length > 4) {
-      const interval = setInterval(() => {
-        setCurrentTeamIndex((prevIndex) => 
-          prevIndex >= Math.ceil(teamMembers.length / 4) - 1 ? 0 : prevIndex + 1
-        );
-      }, 5000);
-
-      return () => clearInterval(interval);
-    }
-  }, [teamMembers.length]);
 
   const goToNextImage = () => {
     setCurrentImageIndex((prevIndex) => 
@@ -112,26 +111,8 @@ const Home = () => {
     );
   };
 
-  const goToNextTeam = () => {
-    setCurrentTeamIndex((prevIndex) => 
-      prevIndex >= Math.ceil(teamMembers.length / 4) - 1 ? 0 : prevIndex + 1
-    );
-  };
-
-  const goToPrevTeam = () => {
-    setCurrentTeamIndex((prevIndex) => 
-      prevIndex === 0 ? Math.ceil(teamMembers.length / 4) - 1 : prevIndex - 1
-    );
-  };
-
   // Get featured events (first 2 events or all if less than 2)
   const featuredEvents = events.slice(0, 2);
-
-  // Get current team members to display (4 at a time)
-  const getCurrentTeamMembers = () => {
-    const startIndex = currentTeamIndex * 4;
-    return teamMembers.slice(startIndex, startIndex + 4);
-  };
 
   return (
     <div>
@@ -253,71 +234,48 @@ const Home = () => {
               absolutely perfect. Get to know the experts who will bring your vision to life.
             </p>
           </div>
-          
-          {/* Team Carousel */}
-          <div className="relative">
-            {/* Navigation Arrows for Team Carousel */}
-            {teamMembers.length > 4 && (
-              <>
-                <button
-                  onClick={goToPrevTeam}
-                  className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 bg-white shadow-lg p-3 rounded-full hover:bg-gray-100 transition-all z-10"
-                  aria-label="Previous team members"
-                >
-                  <FaArrowLeft className="text-gray-800" />
-                </button>
-                <button
-                  onClick={goToNextTeam}
-                  className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 bg-white shadow-lg p-3 rounded-full hover:bg-gray-100 transition-all z-10"
-                  aria-label="Next team members"
-                >
-                  <FaArrowRight className="text-gray-800" />
-                </button>
-              </>
-            )}
-            
-            {/* Team Members Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {getCurrentTeamMembers().map(member => (
-                <div key={member.id} className="bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:scale-105">
-                  <div className="relative">
-                    <img 
-                      src={member.image} 
-                      alt={member.name}
-                      className="w-full h-64 object-cover"
-                    />
-                  </div>
-                  
-                  <div className="p-6 text-center">
-                    <h3 className="text-xl font-semibold text-gray-800 mb-1">{member.name}</h3>
-                    <p className="text-pink-500 font-medium mb-3">{member.role}</p>
-                    <p className="text-gray-600 text-sm">{member.description}</p>
-                  </div>
-                </div>
-              ))}
+
+          {/* Two-column responsive layout (50/50 split) */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            {/* Left: Random wedding image */}
+            <div>
+              <div className="relative overflow-hidden rounded-2xl shadow-md">
+                <img
+                  src={randomTeamImage}
+                  alt="Wedding showcase"
+                  className="w-full h-80 lg:h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent"></div>
+              </div>
             </div>
 
-            {/* Team Carousel Indicators */}
-            {teamMembers.length > 4 && (
-              <div className="flex justify-center mt-8 space-x-2">
-                {Array.from({ length: Math.ceil(teamMembers.length / 4) }).map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentTeamIndex(index)}
-                    className={`w-3 h-3 rounded-full ${
-                      index === currentTeamIndex ? 'bg-pink-500' : 'bg-gray-300'
-                    }`}
-                    aria-label={`Go to team page ${index + 1}`}
-                  ></button>
+            {/* Right: Small round member cards (2x2, equal to left height) */}
+            <div className="lg:h-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 h-full">
+                {teamMembers.slice(0, 4).map(member => (
+                  <div key={member.id} className="group bg-white rounded-xl shadow hover:shadow-lg transition-shadow p-6 sm:p-7 flex items-center space-x-4 sm:space-x-5 h-full">
+                    <div className="relative w-16 h-16 sm:w-20 sm:h-20 flex-shrink-0">
+                      <img 
+                        src={member.image}
+                        alt={member.name}
+                        className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-pink-500/30 group-hover:border-pink-500/60 transition-colors"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800 truncate">{member.name}</h3>
+                      <p className="text-pink-500 text-xs sm:text-sm font-medium truncate">{member.role}</p>
+                      <p className="text-gray-500 text-xs sm:text-sm mt-1 line-clamp-2">{member.description}</p>
+                    </div>
+                  </div>
                 ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Services Section */}
-      <section className="bg-white py-16">
+      <section className="bg-white py-16 mt-12 sm:mt-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Our Services</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">

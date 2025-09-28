@@ -1,7 +1,8 @@
 // src/pages/Admin.js
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaPlus, FaTrash, FaArrowLeft, FaUpload } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaArrowLeft, FaUpload, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 import eventsMiddleware from '../middlewares/eventsMiddleware';
 
 const Admin = () => {
@@ -18,6 +19,7 @@ const Admin = () => {
   const [galleryImages, setGalleryImages] = useState([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   // Fetch events on component mount
   useEffect(() => {
@@ -164,15 +166,32 @@ const Admin = () => {
     return date.toISOString().split('T')[0];
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4 max-w-6xl">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center text-pink-600 hover:text-pink-700 mb-6 font-medium"
-        >
-          <FaArrowLeft className="mr-2" /> Back to Website
-        </button>
+        <div className="flex justify-between items-center mb-6">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center text-pink-600 hover:text-pink-700 font-medium"
+          >
+            <FaArrowLeft className="mr-2" /> Back to Website
+          </button>
+          
+          <div className="flex items-center space-x-4">
+            <span className="text-gray-600">Welcome, {user?.username}</span>
+            <button
+              onClick={handleLogout}
+              className="flex items-center text-red-600 hover:text-red-700 font-medium"
+            >
+              <FaSignOutAlt className="mr-2" /> Logout
+            </button>
+          </div>
+        </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="flex justify-between items-center mb-8">

@@ -1,9 +1,10 @@
-import { apiDelete, apiGet, apiPost } from '../config/axiosIntance';
+import { publicApiPost } from '../config/axiosIntance';
 
 const contactMiddleware = {
+    // Public API - no authentication required (contact form)
     SendMessage: async (payload) => {
         try {
-            const response = await apiPost('/message/create', payload);
+            const response = await publicApiPost('/message/create', payload);
             return response;
         } catch (error) {
             throw error;

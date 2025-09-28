@@ -1,21 +1,39 @@
 // src/components/Footer.js
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaHeart, FaFacebook, FaInstagram, FaTwitter, FaLock } from 'react-icons/fa';
+import { FaHeart, FaFacebook, FaInstagram, FaTwitter, FaLock, FaSignOutAlt } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 const Footer = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const { login, logout, isAuthenticated, user } = useAuth();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    const adminUsername = import.meta.env.VITE_REACT_APP_ADMIN_USERNAME;
-    if (username == adminUsername && password == import.meta.env.VITE_REACT_APP_ADMIN_PASSWORD) {
+    setIsLoggingIn(true);
+    setLoginError('');
+
+    const result = await login(username, password);
+    
+    if (result.success) {
+      setUsername('');
+      setPassword('');
+      setShowLogin(false);
       window.location.href = '/admin';
     } else {
-      alert('Invalid credentials');
+      setLoginError(result.message || 'Login failed');
     }
+    
+    setIsLoggingIn(false);
+  };
+
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/';
   };
 
   return (
@@ -45,37 +63,70 @@ const Footer = () => {
               <a href="#" className="text-gray-300 hover:text-white transition"><FaTwitter size={24} /></a>
             </div>
             
-            {/* Admin Login Button */}
-            <button 
-              onClick={() => setShowLogin(!showLogin)}
-              className="flex items-center text-sm text-gray-300 hover:text-white transition"
-            >
-              <FaLock className="mr-1" size={14} /> Admin Login
-            </button>
-            
-            {/* Login Form */}
-            {showLogin && (
-              <form onSubmit={handleLogin} className="mt-2 p-3 bg-gray-700 rounded">
-                <input
-                  type="text"
-                  placeholder="Username"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full p-2 mb-2 rounded text-gray-800"
-                  required
-                />
-                <input
-                  type="password"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full p-2 mb-2 rounded text-gray-800"
-                  required
-                />
-                <button type="submit" className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition">
-                  Login
+            {/* Admin Login/Logout Section */}
+            {isAuthenticated() ? (
+              <div className="space-y-2">
+                <p className="text-sm text-gray-300">
+                  Welcome, {user?.username}
+                </p>
+                <div className="flex space-x-2">
+                  <Link 
+                    to="/admin"
+                    className="flex items-center text-sm text-gray-300 hover:text-white transition"
+                  >
+                    <FaLock className="mr-1" size={14} /> Admin Panel
+                  </Link>
+                  <button 
+                    onClick={handleLogout}
+                    className="flex items-center text-sm text-gray-300 hover:text-white transition"
+                  >
+                    <FaSignOutAlt className="mr-1" size={14} /> Logout
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button 
+                  onClick={() => setShowLogin(!showLogin)}
+                  className="flex items-center text-sm text-gray-300 hover:text-white transition"
+                >
+                  <FaLock className="mr-1" size={14} /> Admin Login
                 </button>
-              </form>
+                
+                {/* Login Form */}
+                {showLogin && (
+                  <form onSubmit={handleLogin} className="mt-2 p-3 bg-gray-700 rounded">
+                    {loginError && (
+                      <div className="text-red-400 text-sm mb-2">{loginError}</div>
+                    )}
+                    <input
+                      type="text"
+                      placeholder="Username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      className="w-full p-2 mb-2 rounded text-gray-800"
+                      required
+                      disabled={isLoggingIn}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full p-2 mb-2 rounded text-gray-800"
+                      required
+                      disabled={isLoggingIn}
+                    />
+                    <button 
+                      type="submit" 
+                      disabled={isLoggingIn}
+                      className="w-full bg-pink-500 text-white py-2 rounded hover:bg-pink-600 transition disabled:opacity-50"
+                    >
+                      {isLoggingIn ? 'Logging in...' : 'Login'}
+                    </button>
+                  </form>
+                )}
+              </>
             )}
           </div>
         </div>
