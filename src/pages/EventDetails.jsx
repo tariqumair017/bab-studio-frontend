@@ -55,9 +55,9 @@ const EventDetails = () => {
 
 	const allImages = [
 		...(event.displayImage ? [{ url: event.displayImage, isDisplay: true }] : []),
-		...((event.images || []).map(img => ({ 
-			url: typeof img === 'string' ? img : img.url, 
-			isDisplay: false 
+		...((event.images || []).map(img => ({
+			url: typeof img === 'string' ? img : img.url,
+			isDisplay: false
 		})))
 	];
 
@@ -116,8 +116,8 @@ const EventDetails = () => {
 					{allImages.length > 0 ? (
 						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
 							{allImages.map((imageObj, index) => (
-								<div 
-									key={index} 
+								<div
+									key={index}
 									className="group relative bg-gray-100 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-105 cursor-pointer"
 									onClick={() => openModal(index)}
 								>
@@ -127,11 +127,11 @@ const EventDetails = () => {
 											Main Image
 										</div>
 									)}
-									
+
 									{/* Main Image */}
 									<div className="aspect-square overflow-hidden bg-gray-100 relative">
 										<img
-											src={imageObj.url}
+											src={imageObj?.url}
 											alt={`${event.name} - Image ${index + 1}`}
 											className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
 											onError={(e) => {
@@ -139,11 +139,12 @@ const EventDetails = () => {
 												e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzY2NjY2NiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIG5vdCBhdmFpbGFibGU8L3RleHQ+PC9zdmc+';
 												e.target.className = 'w-full h-full object-contain';
 											}}
+
 										/>
 									</div>
-									
+
 									{/* Overlay with expand icon */}
-									<div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
+									<div className="absolute inset-0 bg-black/0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
 										<div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform group-hover:scale-110">
 											<FaExpand className="text-white text-2xl" />
 										</div>
